@@ -9,6 +9,7 @@ import { User, Camera, Lock, CheckCircle2, AlertCircle, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { data: session, update } = useSession();
   const [name, setName] = useState("");
   const [image, setImage] = useState("");

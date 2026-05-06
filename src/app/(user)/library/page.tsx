@@ -12,7 +12,7 @@ export default async function LibraryPage() {
   if (session?.user) {
     const db = await getDb();
     const userId = (session.user as any).id;
-    const libraryEntries = await db.collection("library").find({ userId }).toArray();
+    const libraryEntries = await db.collection("library").find({ userId }).toArray() as any[];
 
     // Enrich library entries with manga details from cache or API
     const enrichedEntries = await Promise.all(

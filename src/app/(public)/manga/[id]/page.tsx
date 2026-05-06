@@ -1,11 +1,11 @@
 import { mangadex } from "@/lib/mangadex";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 import { BookmarkButton } from "@/components/manga/BookmarkButton";
-import { ChevronRight, Play, Info, Calendar, User, Palette, List } from "lucide-react";
+import { ChevronRight, Play, Info, Calendar, User, Palette, List, Star, TrendingUp } from "lucide-react";
 import { Metadata } from "next";
 import { cn } from "@/lib/utils";
 
@@ -49,10 +49,10 @@ export default async function MangaDetailPage({
       {/* ... Dynamic Banner Background ... */}
       <div className="absolute top-0 left-0 w-full h-[60vh] overflow-hidden pointer-events-none">
         <Image
-          src={manga.coverUrl.replace(".256.jpg", "")}
+          src={manga.bannerImage || manga.coverUrl.replace(".256.jpg", "")}
           alt=""
           fill
-          className="object-cover blur-3xl opacity-20 scale-110"
+          className={cn("object-cover opacity-30", !manga.bannerImage && "blur-3xl scale-110")}
           priority
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-background/80 to-background" />
@@ -84,6 +84,18 @@ export default async function MangaDetailPage({
 
               {/* Quick Stats Panel */}
               <div className="glass-panel rounded-3xl p-6 space-y-4 border border-white/5">
+                {manga.averageScore && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground flex items-center gap-2"><Star size={14} className="text-yellow-500 fill-yellow-500" /> Score</span>
+                    <span className="font-bold">{manga.averageScore}%</span>
+                  </div>
+                )}
+                {manga.popularity && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground flex items-center gap-2"><TrendingUp size={14} className="text-blue-500" /> Popularity</span>
+                    <span className="font-bold">#{manga.popularity.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground flex items-center gap-2"><Calendar size={14} /> Year</span>
                   <span className="font-bold">{manga.year || "N/A"}</span>
@@ -122,9 +134,9 @@ export default async function MangaDetailPage({
                 {manga.title}
               </h1>
 
-              <p className="text-lg text-muted-foreground leading-relaxed line-clamp-3 md:line-clamp-none max-w-3xl font-medium">
-                {manga.description || "Explore this amazing journey. No description provided by the source, but the story speaks for itself."}
-              </p>
+              <div className="text-lg text-muted-foreground leading-relaxed line-clamp-3 md:line-clamp-none max-w-3xl font-medium"
+                dangerouslySetInnerHTML={{ __html: manga.richDescription || manga.description || "Explore this amazing journey. No description provided by the source, but the story speaks for itself." }}
+              />
 
               <div className="flex flex-wrap gap-3">
                 {manga.tags.slice(3).map(tag => (
@@ -225,9 +237,10 @@ export default async function MangaDetailPage({
                     <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-primary">
                       <Info size={20} /> Synopsis
                     </h3>
-                    <p className="text-muted-foreground leading-relaxed whitespace-pre-wrap font-medium">
-                      {manga.description || "No detailed information available."}
-                    </p>
+                    <div 
+                      className="text-muted-foreground leading-relaxed whitespace-pre-wrap font-medium"
+                      dangerouslySetInnerHTML={{ __html: manga.richDescription || manga.description || "No detailed information available." }}
+                    />
                   </div>
                   
                   {manga.altTitles && manga.altTitles.length > 0 && (

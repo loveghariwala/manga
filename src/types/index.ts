@@ -17,6 +17,13 @@ export interface MangaDetail extends MangaCard {
   altTitles: string[];
   chaptersCount: number;
   year?: number;
+  
+  // AniList Enrichment Data
+  anilistId?: number;
+  bannerImage?: string;
+  averageScore?: number;
+  popularity?: number;
+  richDescription?: string;
 }
 
 export interface ChapterItem {

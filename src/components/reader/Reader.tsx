@@ -24,6 +24,11 @@ export function Reader({ pages, mangaId, chapterId, chapters = [], initialPage =
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showControls, setShowControls] = useState(true);
   const [readingMode, setReadingMode] = useState<"vertical" | "pagination">("vertical");
+  
+  // Premium Reader Settings
+  const [showSettings, setShowSettings] = useState(false);
+  const [readingDirection, setReadingDirection] = useState<"rtl" | "ltr">("ltr");
+  const [imageFit, setImageFit] = useState<"contain" | "width" | "height">("contain");
 
   // Chapter Navigation Logic
   const currentChapterIndex = chapters.findIndex(c => c.id === chapterId);
@@ -78,9 +83,14 @@ export function Reader({ pages, mangaId, chapterId, chapters = [], initialPage =
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight" || e.key === "d") nextPage();
-      if (e.key === "ArrowLeft" || e.key === "a") prevPage();
+      if (e.key === "ArrowRight" || e.key === "d") {
+        readingMode === "pagination" && readingDirection === "rtl" ? prevPage() : nextPage();
+      }
+      if (e.key === "ArrowLeft" || e.key === "a") {
+        readingMode === "pagination" && readingDirection === "rtl" ? nextPage() : prevPage();
+      }
       if (e.key === "f") toggleFullscreen();
+      if (e.key === "Escape") setShowSettings(false);
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
@@ -208,6 +218,15 @@ export function Reader({ pages, mangaId, chapterId, chapters = [], initialPage =
           </Button>
           <Button 
             variant="ghost" 
+            size="icon" 
+            onClick={() => setShowSettings(!showSettings)}
+            className={cn("rounded-full hover:bg-white/10", showSettings ? "bg-white/10 text-white" : "text-muted-foreground hover:text-white")}
+            title="Reader Settings"
+          >
+            <Settings size={20} />
+          </Button>
+          <Button 
+            variant="ghost" 
             size="icon"
             className="rounded-full hover:bg-white/10 text-muted-foreground hover:text-white md:hidden"
           >
@@ -216,23 +235,77 @@ export function Reader({ pages, mangaId, chapterId, chapters = [], initialPage =
         </div>
       </div>
 
+      {/* Settings Panel */}
+      <div 
+        className={cn(
+          "fixed top-[72px] right-4 md:right-8 z-50 w-64 bg-black/90 backdrop-blur-3xl border border-white/10 rounded-2xl shadow-2xl p-5 transition-all duration-300 origin-top-right",
+          showSettings ? "scale-100 opacity-100" : "scale-95 opacity-0 pointer-events-none"
+        )}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h3 className="text-sm font-black text-white uppercase tracking-widest mb-4">Reader Settings</h3>
+        
+        <div className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-muted-foreground">Reading Mode</label>
+            <div className="flex bg-white/5 rounded-xl p-1 border border-white/10">
+              <button onClick={() => setReadingMode("vertical")} className={cn("flex-1 text-xs font-bold py-2 rounded-lg transition-colors", readingMode === "vertical" ? "bg-primary text-white" : "text-muted-foreground hover:text-white")}>Vertical</button>
+              <button onClick={() => setReadingMode("pagination")} className={cn("flex-1 text-xs font-bold py-2 rounded-lg transition-colors", readingMode === "pagination" ? "bg-primary text-white" : "text-muted-foreground hover:text-white")}>Paged</button>
+            </div>
+          </div>
+
+          {readingMode === "pagination" && (
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-muted-foreground">Direction (Manga/Manhwa)</label>
+              <div className="flex bg-white/5 rounded-xl p-1 border border-white/10">
+                <button onClick={() => setReadingDirection("ltr")} className={cn("flex-1 text-xs font-bold py-2 rounded-lg transition-colors", readingDirection === "ltr" ? "bg-white/20 text-white" : "text-muted-foreground hover:text-white")}>LTR ➡️</button>
+                <button onClick={() => setReadingDirection("rtl")} className={cn("flex-1 text-xs font-bold py-2 rounded-lg transition-colors", readingDirection === "rtl" ? "bg-white/20 text-white" : "text-muted-foreground hover:text-white")}>⬅️ RTL</button>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-2">
+            <label className="text-xs font-bold text-muted-foreground">Image Fit</label>
+            <div className="flex flex-col gap-1">
+              {(["contain", "width", "height"] as const).map(fit => (
+                <button 
+                  key={fit} 
+                  onClick={() => setImageFit(fit)}
+                  className={cn("text-left text-xs font-bold py-2 px-3 rounded-lg transition-colors capitalize", imageFit === fit ? "bg-white/10 text-white" : "text-muted-foreground hover:bg-white/5 hover:text-white")}
+                >
+                  Fit {fit}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Reader Content */}
       <div 
         className={cn(
           "mx-auto flex flex-col items-center pt-[72px] pb-[72px]",
-          readingMode === "vertical" ? "max-w-4xl" : "h-screen justify-center overflow-hidden pt-0 pb-0"
+          readingMode === "vertical" ? (imageFit === "width" ? "w-full" : "max-w-4xl") : "h-screen justify-center overflow-hidden pt-0 pb-0"
         )}
-        onClick={() => setShowControls(!showControls)}
+        onClick={() => {
+          setShowControls(!showControls);
+          setShowSettings(false);
+        }}
       >
         {readingMode === "vertical" ? (
           <div className="w-full space-y-0">
             {pages.map((page, idx) => (
-              <div key={idx} className="relative w-full aspect-[2/3] md:aspect-[3/4]">
+              <div key={idx} className={cn("relative w-full", imageFit === "width" ? "h-auto" : "aspect-[2/3] md:aspect-[3/4]")}>
                 <Image
                   src={page.url}
                   alt={`Page ${page.pageNumber}`}
-                  fill
-                  className="object-contain md:object-cover"
+                  fill={imageFit !== "width"}
+                  width={imageFit === "width" ? 1200 : undefined}
+                  height={imageFit === "width" ? 1800 : undefined}
+                  className={cn(
+                    imageFit === "width" ? "w-full h-auto object-cover" : "object-contain",
+                    readingMode === "vertical" && imageFit !== "width" && "md:object-cover"
+                  )}
                   loading={idx < 5 ? "eager" : "lazy"}
                   quality={90}
                 />
@@ -258,15 +331,15 @@ export function Reader({ pages, mangaId, chapterId, chapters = [], initialPage =
         ) : (
           <div className="relative w-full h-full flex items-center justify-center group">
             {/* Click zones */}
-            <div className="absolute inset-y-0 left-0 w-1/3 z-10 cursor-pointer" onClick={(e) => { e.stopPropagation(); prevPage(); }} />
-            <div className="absolute inset-y-0 right-0 w-1/3 z-10 cursor-pointer" onClick={(e) => { e.stopPropagation(); nextPage(); }} />
+            <div className="absolute inset-y-0 left-0 w-1/3 z-10 cursor-pointer" onClick={(e) => { e.stopPropagation(); readingDirection === 'rtl' ? nextPage() : prevPage(); }} />
+            <div className="absolute inset-y-0 right-0 w-1/3 z-10 cursor-pointer" onClick={(e) => { e.stopPropagation(); readingDirection === 'rtl' ? prevPage() : nextPage(); }} />
             
-            <div className="relative w-full h-full max-w-5xl">
+            <div className={cn("relative w-full h-full flex items-center justify-center", imageFit === "width" ? "w-full" : "max-w-5xl")}>
               <Image
                 src={pages[currentPage].url}
                 alt={`Page ${pages[currentPage].pageNumber}`}
                 fill
-                className="object-contain"
+                className={cn("transition-all duration-300", imageFit === "contain" ? "object-contain" : imageFit === "width" ? "object-cover object-top" : "object-cover")}
                 priority
                 quality={100}
               />
